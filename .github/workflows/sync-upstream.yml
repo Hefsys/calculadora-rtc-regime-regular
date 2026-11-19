@@ -1,0 +1,25 @@
+name: Sincronizar com o repositório oficial
+
+# Traz para este fork as atualizações publicadas pela Receita Federal no repositório oficial.
+# O push resultante dispara o deploy no Coolify (webhook do repositório).
+on:
+  schedule:
+    - cron: "17 9 * * *" # todo dia, 06:17 (horário de Brasília)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge do repositório oficial na main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          resp=$(gh api -X POST "repos/${GITHUB_REPOSITORY}/merge-upstream" -f branch=main)
+          echo "$resp"
+          echo "### Sincronização com o oficial" >> "$GITHUB_STEP_SUMMARY"
+          echo "$resp" | jq -r '"- resultado: \(.merge_type) — \(.message)"' >> "$GITHUB_STEP_SUMMARY"
